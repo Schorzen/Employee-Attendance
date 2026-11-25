@@ -61,7 +61,7 @@ async function main() {
         <dl class="info"><dt>Name</dt><dd>${esc(e.full_name)}</dd><dt>Employee No.</dt><dd>${esc(e.employee_no)}</dd></dl>
         <div class="note">This card is the property of ${esc(o.address.split(',')[0])} and is non-transferable.
           If found, please return to the Barangay Hall, ${esc(o.address)}.</div>
-        <div class="sign"><img class="sig" src="img/signature.png" alt="" onerror="this.remove()"><div class="line"></div><div class="who">${esc(o.signatory)}</div><div class="title">${esc(o.signatoryTitle)}</div></div>
+        <div class="sign"><img class="sig" src="img/signature.png?v=2" alt="" onerror="this.remove()"><div class="line"></div><div class="who">${esc(o.signatory)}</div><div class="title">${esc(o.signatoryTitle)}</div></div>
         <div class="bfoot">${WAVE(28, '#1F6FB2')}</div>
       </div>
     </div>`;
