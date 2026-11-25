@@ -67,6 +67,17 @@ async function loadEmployees() {
 
 async function startKiosk() {
   $('kioskView').classList.remove('hidden');
+  if (SETTINGS.kioskMode === 'qr') {
+    const { startQrKiosk } = await import('./kiosk-qr.js');
+    $('info').textContent = 'ID card scanner';
+    return startQrKiosk({ video, setStatus, isBusy: () => showingResult, showResult: (r, ...rest) => {
+      if (typeof r === 'string') return showResult(r, ...rest);
+      if (r.status === 'unknown') return showResult('dup', 'NOT VALID', 'ID not recognized', '—', 'This card is inactive or was replaced. Please see the admin.');
+      if (r.status === 'duplicate') return showResult('dup', 'ALREADY RECORDED', r.full_name, fmtTime(r.punched_at), `Time ${r.punch_type} was just recorded.`);
+      const isIn = r.punch_type === 'in';
+      showResult(isIn ? 'in' : 'out', isIn ? 'TIME IN' : 'TIME OUT', r.full_name, fmtTime(r.punched_at), isIn ? 'Have a great day!' : 'Ingat! See you tomorrow.');
+    } });
+  }
   try {
     setStatus('Loading face models…');
     await Promise.all([loadModels(), loadEmployees()]);
@@ -156,8 +167,9 @@ async function punch(emp, distance) {
 }
 
 function showResult(cls, tag, name, time, msg) {
+  showingResult = true;
   $('rTag').className = 'tag ' + cls; $('rTag').textContent = tag;
-  $('rName').textContent = name; $('rTime').textContent = time; $('rMsg').textContent = msg;
+  $('rName').textContent = name;
   $('result').classList.remove('hidden');
   setTimeout(() => { $('result').classList.add('hidden'); showingResult = false; setStatus('Look at the camera'); }, 3500);
 }

@@ -8,7 +8,19 @@ export const SUPABASE_URL = 'https://acswffglpevchssuwjhw.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable_Ou2IF7ldaoRYAwD1gGH7Rg_KNuQ-Bok';
 
 export const SETTINGS = {
-  companyName: 'Employee Attendance',
+  companyName: 'Barangay Talisay',
+  // Printed on the ID cards
+  org: {
+    country: 'Republic of the Philippines',
+    province: 'Province of Cebu',
+    municipality: 'Municipality of Santa Fe',
+    name: 'BARANGAY TALISAY',
+    address: 'Barangay Talisay, Santa Fe, Cebu',
+    signatory: 'HON. ROGELITO G. CABRERA',
+    signatoryTitle: 'Punong Barangay',
+  },
+  // How employees clock in at the kiosk: 'qr' = scan ID card, 'face' = face recognition
+  kioskMode: 'qr',
   timezone: 'Asia/Manila',
   // Face match strictness: lower = stricter. 0.45–0.55 is typical.
   matchThreshold: 0.5,

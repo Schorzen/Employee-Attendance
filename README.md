@@ -1,4 +1,17 @@
-# Employee Attendance (Face Recognition Kiosk)
+# Barangay Talisay — Employee Attendance
+
+**Clock-in method:** set `kioskMode` in `js/config.js`:
+- `'qr'` (current): employees scan the **QR code on their ID card** at the kiosk camera, or with a USB QR scanner.
+- `'face'`: face recognition with a blink/head-turn check.
+
+## ID cards
+- Admin → **Employees** → **ID card** (one employee) or **Print all ID cards**. Print at 100%, cut, put front and back together, then laminate.
+- **Replace ID** creates a new QR and disables the old card right away. Use it for lost or stolen cards.
+- **Logos:** upload the real files to the `img/` folder with these names: `barangay-talisay-seal.png`, `santa-fe-seal.png`, `bagong-pilipinas.png`.
+- Update **2** of the database: run [`supabase/002_qr_id_cards.sql`](supabase/002_qr_id_cards.sql) once.
+
+---
+
 
 A free attendance system that runs on **GitHub Pages** + **Supabase**.
 

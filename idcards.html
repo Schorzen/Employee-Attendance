@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Employee ID Cards — Barangay Talisay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root { --navy:#1F3A5F; --night:#0A1F3D; --green:#0E7C66; --gold:#F5C451; --blue:#1A4FD8; --red:#E0322B; }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { margin: 0; font-family: Montserrat, system-ui, sans-serif; background: #e9edf2; color: var(--navy); }
+    .bar { position: sticky; top: 0; background: #fff; border-bottom: 1px solid #dde3ea; padding: 12px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; z-index: 2; }
+    .bar b { margin-right: auto; }
+    .bar button { font: inherit; font-weight: 700; border: 0; border-radius: 8px; padding: 9px 16px; background: var(--green); color: #fff; cursor: pointer; }
+    .bar small { color: #667085; width: 100%; }
+    .sheet { padding: 20px; display: flex; flex-wrap: wrap; gap: 8mm; justify-content: center; }
+    .pair { display: flex; break-inside: avoid; page-break-inside: avoid; }
+    .card { width: 54mm; height: 85.6mm; background: #fff; position: relative; overflow: hidden; outline: .2mm dashed #9aa4b2; display: flex; flex-direction: column; }
+    .pair .card + .card { outline-style: dashed; }
+
+    /* front */
+    .head { background: linear-gradient(160deg, var(--navy), var(--night)); color: #fff; text-align: center; padding: 2.6mm 2mm 2.2mm; }
+    .logos { display: flex; justify-content: center; gap: 1.6mm; margin-bottom: 1.2mm; }
+    .logos img { width: 8.5mm; height: 8.5mm; object-fit: contain; background: #fff; border-radius: 50%; padding: .5mm; box-shadow: 0 0 0 .35mm var(--gold); }
+    .gov { font-size: 4.6pt; line-height: 1.35; opacity: .9; font-weight: 500; }
+    .brgy { font-size: 10.5pt; font-weight: 900; letter-spacing: .04em; margin-top: .6mm; }
+    .label { display: inline-block; margin-top: 1mm; font-size: 5.2pt; font-weight: 800; letter-spacing: .25em; color: var(--night); background: var(--gold); padding: .5mm 2.2mm; border-radius: 1mm; }
+    .stripe { height: 1.1mm; background: linear-gradient(90deg, var(--blue) 0 33.3%, var(--red) 33.3% 66.6%, var(--gold) 66.6%); }
+    .photo { width: 25mm; height: 25mm; margin: 3.2mm auto 2mm; border: .4mm solid var(--navy); border-radius: 1.5mm; display: grid; place-items: center; font-size: 5.5pt; color: #98a2b3; font-weight: 700; cursor: pointer; overflow: hidden; background: #f5f7fa; }
+    .photo img { width: 100%; height: 100%; object-fit: cover; }
+    .name { text-align: center; font-weight: 900; font-size: 9.5pt; line-height: 1.1; padding: 0 2.5mm; text-transform: uppercase; }
+    .pos { text-align: center; font-size: 6.5pt; font-weight: 700; color: var(--green); margin-top: 1mm; padding: 0 2mm; }
+    .dept { text-align: center; font-size: 5.8pt; color: #475467; margin-top: .4mm; padding: 0 2mm; }
+    .idno { margin: auto 0 0; background: var(--navy); color: #fff; text-align: center; padding: 1.8mm 0; font-size: 6pt; letter-spacing: .08em; }
+    .idno b { color: var(--gold); font-size: 7.5pt; letter-spacing: .05em; }
+
+    /* back */
+    .bhead { background: var(--navy); color: #fff; text-align: center; font-size: 5.6pt; font-weight: 800; letter-spacing: .18em; padding: 2mm; }
+    .qr { width: 38mm; height: 38mm; margin: 4mm auto 1mm; }
+    .qr svg { width: 100%; height: 100%; display: block; }
+    .scan { text-align: center; font-size: 5.6pt; font-weight: 700; color: var(--green); letter-spacing: .06em; text-transform: uppercase; }
+    .bid { text-align: center; font-size: 7pt; font-weight: 800; margin-top: 1mm; }
+    .note { font-size: 4.8pt; line-height: 1.4; color: #475467; text-align: center; padding: 2.4mm 3.5mm 0; }
+    .sign { margin: auto 4mm 3.5mm; text-align: center; }
+    .sign .line { border-top: .25mm solid var(--navy); margin-bottom: .7mm; }
+    .sign .who { font-size: 6pt; font-weight: 800; }
+    .sign .title { font-size: 5pt; color: #475467; }
+
+    .msg { padding: 40px; text-align: center; color: #475467; }
+    @page { margin: 8mm; }
+    @media print {
+      body { background: #fff; }
+      .bar { display: none; }
+      .sheet { padding: 0; gap: 4mm; justify-content: flex-start; }
+      .photo { border-style: solid; }
+      .photo.empty span { visibility: hidden; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <b id="count">ID Cards</b>
+    <button onclick="window.print()">Print</button>
+    <small>Each employee has a <b>front</b> (left) and <b>back</b> (right). Print at <b>100% / Actual size</b>, cut along the dashed lines, put front and back together, then laminate.
+      Click a photo box to add a 1×1 photo for printing (the photo is not saved), or leave it blank and paste a photo after printing.</small>
+  </div>
+  <div class="sheet" id="sheet"><div class="msg">Loading…</div></div>
+  <script type="module" src="js/idcards.js"></script>
+</body>
+</html>

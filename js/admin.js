@@ -212,15 +212,19 @@ $('manualForm').addEventListener('submit', async (e) => {
 // ---------------- employees ----------------
 $('empSearch').addEventListener('input', renderEmployees);
 
+const faceMode = SETTINGS.kioskMode === 'face';
+
 function renderEmployees() {
   const q = $('empSearch').value.toLowerCase();
   const list = employees.filter((e) => !q || [e.full_name, e.employee_no, e.department, e.position].join(' ').toLowerCase().includes(q));
-  $('empTable').innerHTML = `<thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Position</th><th>Face</th><th>Status</th><th></th></tr></thead><tbody>${
+  $('empTable').innerHTML = `<thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Position</th>${faceMode ? '<th>Face</th>' : ''}<th>Status</th><th></th></tr></thead><tbody>${
     list.map((e) => { const n = e.face_descriptors?.length || 0; return `<tr><td>${esc(e.employee_no)}</td><td>${esc(e.full_name)}</td><td>${esc(e.department)}</td><td>${esc(e.position)}</td>
-      <td>${n ? `<span class="pill in">Enrolled</span>` : '<span class="pill warn">Not enrolled</span>'}</td>
+      ${faceMode ? `<td>${n ? '<span class="pill in">Enrolled</span>' : '<span class="pill warn">Not enrolled</span>'}</td>` : ''}
       <td>${e.active ? 'Active' : '<span class="pill none">Inactive</span>'}</td>
       <td class="actions"><button class="btn sm" data-edit="${e.id}">Edit</button>
-        <button class="btn sm" data-enroll="${e.id}">${n ? 'Re-enroll' : 'Enroll face'}</button>
+        <a class="btn sm" href="idcards.html?ids=${e.id}" target="_blank">ID card</a>
+        <button class="btn sm" data-reissue="${e.id}">Replace ID</button>
+        ${faceMode ? `<button class="btn sm" data-enroll="${e.id}">${n ? 'Re-enroll' : 'Enroll face'}</button>` : ''}
         ${n ? `<button class="btn sm danger" data-clear="${e.id}">Remove face</button>` : ''}</td></tr>`; }).join('')
     || '<tr><td colspan="7" class="empty">No employees yet.</td></tr>'}</tbody>`;
 }
@@ -229,6 +233,15 @@ $('empTable').addEventListener('click', async (ev) => {
   const t = ev.target.dataset;
   if (t.edit) openEmpForm(empById(t.edit));
   if (t.enroll) openEnroll(empById(t.enroll));
+  if (t.reissue) {
+    const e = empById(t.reissue);
+    if (!confirm(`Replace ${e.full_name}'s ID card?\n\nUse this if the card was lost or stolen. The OLD card will stop working immediately, and you will need to print a new one.`)) return;
+    const token = crypto.randomUUID().replace(/-/g, '');
+    const { error } = await sb.from('employees').update({ qr_token: token }).eq('id', e.id);
+    if (error) return alert(error.message);
+    toast('Old ID disabled — print the new card');
+    window.open(`idcards.html?ids=${e.id}`, '_blank');
+  }
   if (t.clear) {
     if (!confirm('Delete this employee\'s face data? They will need to be enrolled again to use the kiosk.')) return;
     const { error } = await sb.from('employees').update({ face_descriptors: [], consent_at: null }).eq('id', t.clear);
