@@ -322,17 +322,20 @@ $('empDialog').addEventListener('close', stopEmpCam);
 $('empForm').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   const row = {
-    employee_no: $('empNo').value.trim(), full_name: $('empName').value.trim(),
+    full_name: $('empName').value.trim(),
     department: $('empDept').value.trim() || null, position: $('empPos').value.trim() || null, active: $('empActive').checked,
     photo: photoData,
   };
   const id = $('empId').value;
-  const { error } = id ? await sb.from('employees').update(row).eq('id', id) : await sb.from('employees').insert(row);
+  const { data: saved, error } = id
+    ? await sb.from('employees').update(row).eq('id', id).select('id, employee_no').single()
+    : await sb.from('employees').insert(row).select('id, employee_no').single();
+  const newId = saved?.id;
   if (error) return ($('empError').textContent = error.code === '23505' ? 'That Employee ID already exists.' : error.message);
   $('empDialog').close();
   await loadEmployees(); renderEmployees(); toast('Employee saved');
-  if (!id && confirm('Employee saved. Open their ID card for printing now?')) {
-    const added = employees.find((x) => x.employee_no === row.employee_no);
+  if (!id && confirm(`Employee saved with ID ${saved.employee_no}. Open their ID card for printing now?`)) {
+    const added = employees.find((x) => x.id === newId);
     if (added) window.open(`idcards.html?ids=${added.id}`, '_blank');
   }
 });
