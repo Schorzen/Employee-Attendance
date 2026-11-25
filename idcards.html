@@ -21,7 +21,7 @@
     /* shared pieces */
     .stripe { height: 1.2mm; flex: none; background: linear-gradient(90deg, var(--blue) 0 33.3%, var(--red) 33.3% 66.6%, var(--gold) 66.6%); }
     .seal { background: #fff; border-radius: 50%; box-shadow: 0 0 0 .45mm var(--gold); object-fit: contain; }
-    .wave { position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none; }
+    .wave { position: absolute; left: 0; bottom: 0; width: 100%; display: block; pointer-events: none; }
     .wm { position: absolute; width: 46mm; height: 46mm; left: 4mm; top: 33mm; opacity: .07; pointer-events: none; }
 
     /* ---------- front ---------- */
@@ -53,7 +53,7 @@
     .bhead .seal { width: 8mm; height: 8mm; box-shadow: 0 0 0 .35mm var(--gold); }
     .bhead .t1 { font-size: 7pt; font-weight: 900; letter-spacing: .04em; line-height: 1.05; }
     .bhead .t2 { font-size: 4.6pt; color: var(--gold); letter-spacing: .2em; font-weight: 700; margin-top: .4mm; }
-    .qrwrap { position: relative; width: 37mm; height: 37mm; margin: 3.4mm auto 0; padding: 1.6mm; }
+    .qrwrap { position: relative; width: 33mm; height: 33mm; margin: 3mm auto 0; padding: 1.5mm; flex: none; }
     .qrwrap::before { content: ''; position: absolute; inset: 0; pointer-events: none;
       background:
         linear-gradient(var(--gold), var(--gold)) top left / 5mm .7mm, linear-gradient(var(--gold), var(--gold)) top left / .7mm 5mm,
@@ -66,7 +66,7 @@
     .info { margin: 2mm 3.5mm 0; border-top: .2mm solid #e4e7ec; padding-top: 1.6mm; display: grid; grid-template-columns: auto 1fr; gap: .5mm 2mm; font-size: 5.4pt; }
     .info dt { color: #667085; font-weight: 600; } .info dd { margin: 0; font-weight: 800; text-align: right; }
     .note { font-size: 4.4pt; line-height: 1.45; color: #475467; text-align: center; padding: 1.8mm 3.5mm 0; }
-    .sign { margin: auto 5mm 0; text-align: center; position: relative; }
+    .sign { margin: auto 5mm .5mm; text-align: center; position: relative; }
     .sign .line { border-top: .25mm solid var(--navy); margin-bottom: .7mm; }
     .sign .who { font-size: 5.8pt; font-weight: 900; }
     .sign .title { font-size: 4.8pt; color: #475467; font-weight: 600; }
