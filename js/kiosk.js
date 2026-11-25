@@ -1,6 +1,6 @@
 import { sb, getRole, keyMissing, fmtTime, fmtDate } from './supabase.js';
 import { SETTINGS } from './config.js';
-import { loadModels, startCamera, detectFaces, buildMatcher, eyeOpenness, BlinkDetector } from './face.js';
+import { loadModels, startCamera, detectFaces, buildMatcher, LivenessDetector } from './face.js';
 
 const $ = (id) => document.getElementById(id);
 const video = $('video'), overlay = $('overlay'), cam = $('cam'), statusEl = $('status');
@@ -8,7 +8,8 @@ const video = $('video'), overlay = $('overlay'), cam = $('cam'), statusEl = $('
 let matcher = null, employeesById = new Map();
 let busy = false, showingResult = false;
 let candidate = null, candidateFrames = 0, unknownFrames = 0;
-const blink = new BlinkDetector();
+const live = new LivenessDetector();
+let frameNo = 0, lastMatch = null;
 const recentlyPunched = new Map(); // employeeId -> timestamp
 
 // ---------- clock ----------
@@ -81,7 +82,7 @@ async function startKiosk() {
   loop();
 }
 
-function resetCandidate() { candidate = null; candidateFrames = 0; blink.reset(); }
+function resetCandidate() { candidate = null; candidateFrames = 0; lastMatch = null; live.reset(); }
 
 async function loop() {
   if (!busy && !showingResult) {
@@ -89,11 +90,14 @@ async function loop() {
     try { await processFrame(); } catch (e) { console.error(e); }
     busy = false;
   }
-  setTimeout(loop, 120);
+  requestAnimationFrame(loop);
 }
 
 async function processFrame() {
-  const dets = await detectFaces(video);
+  frameNo++;
+  // Recognize (slow) only when needed; track eyes/head (fast) on every frame.
+  const needId = !candidate || frameNo % 8 === 0;
+  const dets = await detectFaces(video, { descriptors: needId, inputSize: 320 });
   const ctx = overlay.getContext('2d');
   ctx.clearRect(0, 0, overlay.width, overlay.height);
 
@@ -107,28 +111,31 @@ async function processFrame() {
   if (box.width < overlay.width * 0.22) { resetCandidate(); return setStatus('Please come closer', 'wait'); }
   if (!matcher) return setStatus('No employees enrolled yet', 'bad');
 
-  const best = matcher.findBestMatch(d.descriptor);
-  if (best.label === 'unknown') {
-    resetCandidate();
-    unknownFrames++;
-    return setStatus(unknownFrames > 10 ? 'Face not recognized — please see the admin' : 'Scanning…', unknownFrames > 10 ? 'bad' : 'wait');
+  if (needId) {
+    const best = matcher.findBestMatch(d.descriptor);
+    if (best.label === 'unknown') {
+      resetCandidate();
+      unknownFrames++;
+      return setStatus(unknownFrames > 6 ? 'Face not recognized — please see the admin' : 'Scanning…', unknownFrames > 6 ? 'bad' : 'wait');
+    }
+    unknownFrames = 0;
+    if (candidate !== best.label) { resetCandidate(); candidate = best.label; }
+    candidateFrames++;
+    lastMatch = best;
   }
-  unknownFrames = 0;
 
-  if (candidate !== best.label) { resetCandidate(); candidate = best.label; }
-  candidateFrames++;
-  const blinked = blink.update(eyeOpenness(d.landmarks));
-  const emp = employeesById.get(best.label);
+  const alive = live.update(d.landmarks, box);
+  const emp = employeesById.get(candidate);
 
-  const last = recentlyPunched.get(best.label);
+  const last = recentlyPunched.get(candidate);
   if (last && Date.now() - last < SETTINGS.kioskRepeatSeconds * 1000) {
     return setStatus(`${emp.full_name} — already recorded`, 'ok');
   }
 
-  if (candidateFrames < 3) return setStatus('Scanning…', 'wait');
-  if (SETTINGS.requireBlink && !blinked) return setStatus(`Hi ${emp.full_name.split(' ')[0]}! Please blink 👁️`, 'wait');
+  if (SETTINGS.requireBlink && !alive) return setStatus(`Hi ${emp.full_name.split(' ')[0]}! Blink or turn your head slightly 👁️`, 'wait');
+  if (candidateFrames < 2) return setStatus('Scanning…', 'wait'); // confirm identity twice
 
-  await punch(emp, best.distance);
+  await punch(emp, lastMatch.distance);
 }
 
 async function punch(emp, distance) {

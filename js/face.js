@@ -16,10 +16,12 @@ export function loadModels() {
   return loaded;
 }
 
-const opts = () => new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 });
+const opts = (inputSize) => new faceapi.TinyFaceDetectorOptions({ inputSize, scoreThreshold: 0.5 });
 
-export async function detectFaces(video) {
-  return faceapi.detectAllFaces(video, opts()).withFaceLandmarks().withFaceDescriptors();
+// descriptors=false skips the (slow) recognition step — used for fast blink/head tracking
+export async function detectFaces(video, { descriptors = true, inputSize = 416 } = {}) {
+  const q = faceapi.detectAllFaces(video, opts(inputSize)).withFaceLandmarks();
+  return descriptors ? q.withFaceDescriptors() : q;
 }
 
 export async function startCamera(video) {
@@ -44,16 +46,24 @@ export function eyeOpenness(landmarks) {
   return (ear(landmarks.getLeftEye()) + ear(landmarks.getRightEye())) / 2;
 }
 
-// Blink tracker: open -> closed -> open = one blink
-export class BlinkDetector {
+// Liveness: passes on a blink (open -> closed -> open) OR a small head turn.
+// A printed photo can't blink, and turning it doesn't change where the nose sits inside the face.
+export class LivenessDetector {
   constructor() { this.reset(); }
-  reset() { this.baseline = null; this.closed = false; this.blinked = false; }
-  update(value) {
-    this.baseline = this.baseline == null ? value : Math.max(value, this.baseline * 0.98);
-    const closedAt = this.baseline * 0.72, openAt = this.baseline * 0.88;
-    if (!this.closed && value < closedAt) this.closed = true;
-    else if (this.closed && value > openAt) { this.closed = false; this.blinked = true; }
-    return this.blinked;
+  reset() { this.baseline = null; this.closed = false; this.minTurn = Infinity; this.maxTurn = -Infinity; this.passed = false; this.how = ''; }
+  update(landmarks, box) {
+    if (this.passed) return true;
+    // blink
+    const v = eyeOpenness(landmarks);
+    this.baseline = this.baseline == null ? v : Math.max(v, this.baseline * 0.99);
+    if (!this.closed && v < this.baseline * 0.8) this.closed = true;
+    else if (this.closed && v > this.baseline * 0.9) { this.passed = true; this.how = 'blink'; }
+    // head turn: nose position inside the face box
+    const nose = landmarks.getNose()[3];
+    const t = (nose.x - box.x) / box.width;
+    this.minTurn = Math.min(this.minTurn, t); this.maxTurn = Math.max(this.maxTurn, t);
+    if (this.maxTurn - this.minTurn > 0.1) { this.passed = true; this.how = 'turn'; }
+    return this.passed;
   }
 }
 
