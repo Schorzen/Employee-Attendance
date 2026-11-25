@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Attendance Admin</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="keyBanner" class="banner hidden">Supabase key not set. Open <b>js/config.js</b> and paste your publishable key.</div>
+
+  <section id="loginView" class="login hidden">
+    <h1>Admin sign in</h1>
+    <p>Employee Attendance</p>
+    <form id="loginForm">
+      <label>Email</label><input id="email" type="email" required autocomplete="username" />
+      <label>Password</label><input id="password" type="password" required autocomplete="current-password" />
+      <button class="btn primary" type="submit">Sign in</button>
+      <div id="loginError" class="error"></div>
+    </form>
+  </section>
+
+  <div id="app" class="hidden">
+    <div class="topbar">
+      <div class="title" id="appTitle">Attendance Admin</div>
+      <nav class="tabs">
+        <button data-tab="today" class="active">Today</button>
+        <button data-tab="records">Records</button>
+        <button data-tab="employees">Employees</button>
+      </nav>
+      <a class="btn sm" href="index.html">Open kiosk</a>
+      <button class="btn sm" id="logoutBtn">Sign out</button>
+    </div>
+
+    <main>
+      <!-- TODAY -->
+      <section id="tab-today">
+        <div class="toolbar">
+          <h2 style="margin:0" id="todayTitle">Today</h2>
+          <div class="spacer"></div>
+          <button class="btn" id="refreshToday">Refresh</button>
+        </div>
+        <div class="stats" id="todayStats"></div>
+        <div class="table-wrap"><table id="todayTable"></table></div>
+      </section>
+
+      <!-- RECORDS -->
+      <section id="tab-records" class="hidden">
+        <div class="toolbar">
+          <div><label>From</label><input type="date" id="fFrom" /></div>
+          <div><label>To</label><input type="date" id="fTo" /></div>
+          <div style="min-width:220px"><label>Employee</label><select id="fEmp"><option value="">All employees</option></select></div>
+          <div><label>View</label>
+            <select id="fView"><option value="summary">Daily summary</option><option value="raw">All punches</option></select>
+          </div>
+          <button class="btn primary" id="loadRecords">Show</button>
+          <div class="spacer"></div>
+          <button class="btn" id="addManual">+ Manual entry</button>
+          <button class="btn" id="exportCsv">Export CSV</button>
+        </div>
+        <div class="table-wrap"><table id="recordsTable"></table></div>
+      </section>
+
+      <!-- EMPLOYEES -->
+      <section id="tab-employees" class="hidden">
+        <div class="toolbar">
+          <div style="min-width:260px"><label>Search</label><input id="empSearch" placeholder="Name, ID or department" /></div>
+          <div class="spacer"></div>
+          <button class="btn primary" id="addEmp">+ Add employee</button>
+        </div>
+        <div class="table-wrap"><table id="empTable"></table></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Employee form -->
+  <dialog id="empDialog">
+    <form id="empForm" method="dialog">
+      <h2 id="empDialogTitle">Add employee</h2>
+      <input type="hidden" id="empId" />
+      <div class="row">
+        <div><label>Employee ID</label><input id="empNo" required /></div>
+        <div><label>Full name</label><input id="empName" required /></div>
+      </div>
+      <div class="row">
+        <div><label>Department</label><input id="empDept" /></div>
+        <div><label>Position</label><input id="empPos" /></div>
+      </div>
+      <label class="check"><input type="checkbox" id="empActive" checked /> Active</label>
+      <div class="error" id="empError"></div>
+      <div class="foot">
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Face enrollment -->
+  <dialog id="enrollDialog">
+    <div class="body">
+      <h2>Enroll face — <span id="enrollName"></span></h2>
+      <label class="check"><input type="checkbox" id="consentBox" /> The employee has signed the biometric data consent form.</label>
+      <div class="enroll-cam"><video id="enrollVideo" muted playsinline></video></div>
+      <div class="progress"><div id="enrollBar"></div></div>
+      <div class="hint" id="enrollHint">Good lighting, face the camera, no cap or sunglasses.</div>
+      <div class="foot">
+        <button type="button" class="btn" id="enrollCancel">Close</button>
+        <button type="button" class="btn primary" id="enrollStart" disabled>Capture face</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Manual entry -->
+  <dialog id="manualDialog">
+    <form id="manualForm" method="dialog">
+      <h2>Manual entry</h2>
+      <label>Employee</label><select id="mEmp" required></select>
+      <div class="row">
+        <div><label>Type</label><select id="mType"><option value="in">Time in</option><option value="out">Time out</option></select></div>
+        <div><label>Date &amp; time</label><input type="datetime-local" id="mWhen" required /></div>
+      </div>
+      <label>Reason / note</label><input id="mNote" placeholder="e.g. Camera down, field work" required />
+      <div class="error" id="mError"></div>
+      <div class="foot">
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
