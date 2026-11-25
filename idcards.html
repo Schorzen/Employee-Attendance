@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
-    :root { --navy:#1F3A5F; --night:#0A1F3D; --green:#0E7C66; --gold:#F5C451; --blue:#1A4FD8; --red:#E0322B; }
+    :root { --navy:#1F3A5F; --night:#0A1F3D; --green:#0E7C66; --gold:#F5C451; --blue:#1A4FD8; --red:#E0322B; --sea:#1F6FB2; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     body { margin: 0; font-family: Montserrat, system-ui, sans-serif; background: #e9edf2; color: var(--navy); }
     .bar { position: sticky; top: 0; background: #fff; border-bottom: 1px solid #dde3ea; padding: 12px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; z-index: 2; }
@@ -15,45 +15,70 @@
     .bar button { font: inherit; font-weight: 700; border: 0; border-radius: 8px; padding: 9px 16px; background: var(--green); color: #fff; cursor: pointer; }
     .bar small { color: #667085; width: 100%; }
     .sheet { padding: 20px; display: flex; flex-wrap: wrap; gap: 8mm; justify-content: center; }
-    .pair { display: flex; break-inside: avoid; page-break-inside: avoid; }
-    .card { width: 54mm; height: 85.6mm; background: #fff; position: relative; overflow: hidden; outline: .2mm dashed #9aa4b2; display: flex; flex-direction: column; }
-    .pair .card + .card { outline-style: dashed; }
+    .pair { display: flex; gap: 2mm; break-inside: avoid; page-break-inside: avoid; }
+    .card { width: 54mm; height: 85.6mm; background: #fff; position: relative; overflow: hidden; border-radius: 3mm; outline: .2mm dashed #9aa4b2; outline-offset: .6mm; display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(10,31,61,.12); }
 
-    /* front */
-    .head { background: linear-gradient(160deg, var(--navy), var(--night)); color: #fff; text-align: center; padding: 2.6mm 2mm 2.2mm; }
-    .logos { display: flex; justify-content: center; gap: 1.6mm; margin-bottom: 1.2mm; }
-    .logos img { width: 8.5mm; height: 8.5mm; object-fit: contain; background: #fff; border-radius: 50%; padding: .5mm; box-shadow: 0 0 0 .35mm var(--gold); }
-    .gov { font-size: 4.6pt; line-height: 1.35; opacity: .9; font-weight: 500; }
-    .brgy { font-size: 10.5pt; font-weight: 900; letter-spacing: .04em; margin-top: .6mm; }
-    .label { display: inline-block; margin-top: 1mm; font-size: 5.2pt; font-weight: 800; letter-spacing: .25em; color: var(--night); background: var(--gold); padding: .5mm 2.2mm; border-radius: 1mm; }
-    .stripe { height: 1.1mm; background: linear-gradient(90deg, var(--blue) 0 33.3%, var(--red) 33.3% 66.6%, var(--gold) 66.6%); }
-    .photo { width: 25mm; height: 25mm; margin: 3.2mm auto 2mm; border: .4mm solid var(--navy); border-radius: 1.5mm; display: grid; place-items: center; font-size: 5.5pt; color: #98a2b3; font-weight: 700; cursor: pointer; overflow: hidden; background: #f5f7fa; }
+    /* shared pieces */
+    .stripe { height: 1.2mm; flex: none; background: linear-gradient(90deg, var(--blue) 0 33.3%, var(--red) 33.3% 66.6%, var(--gold) 66.6%); }
+    .seal { background: #fff; border-radius: 50%; box-shadow: 0 0 0 .45mm var(--gold); object-fit: contain; }
+    .wave { position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none; }
+    .wm { position: absolute; width: 46mm; height: 46mm; left: 4mm; top: 33mm; opacity: .07; pointer-events: none; }
+
+    /* ---------- front ---------- */
+    .head { position: relative; flex: none; color: #fff; text-align: center; padding: 2.4mm 2mm 2.2mm;
+      background:
+        repeating-conic-gradient(from 0deg at 50% 120%, rgba(245,196,81,.10) 0 4deg, transparent 4deg 12deg),
+        linear-gradient(165deg, var(--navy) 0%, var(--night) 100%); }
+    .head .row { display: flex; align-items: center; justify-content: space-between; gap: 1mm; }
+    .head .seal { width: 11.5mm; height: 11.5mm; flex: none; }
+    .gov { font-size: 4.3pt; line-height: 1.4; font-weight: 600; letter-spacing: .02em; opacity: .92; }
+    .gov .rp { font-weight: 800; letter-spacing: .06em; }
+    .brgy { font-size: 11.5pt; font-weight: 900; letter-spacing: .05em; margin-top: 1.3mm; line-height: 1; }
+    .town { font-size: 5pt; font-weight: 600; letter-spacing: .3em; color: var(--gold); margin-top: .7mm; }
+
+    .body { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; }
+    .photo { position: relative; width: 25mm; height: 25mm; margin-top: 3mm; border-radius: 2mm; background: #f2f5f9;
+      border: .5mm solid #fff; box-shadow: 0 0 0 .5mm var(--navy), 0 0 0 1mm var(--gold);
+      display: grid; place-items: center; font-size: 5pt; color: #98a2b3; font-weight: 700; letter-spacing: .1em; cursor: pointer; overflow: hidden; }
     .photo img { width: 100%; height: 100%; object-fit: cover; }
-    .name { text-align: center; font-weight: 900; font-size: 9.5pt; line-height: 1.1; padding: 0 2.5mm; text-transform: uppercase; }
-    .pos { text-align: center; font-size: 6.5pt; font-weight: 700; color: var(--green); margin-top: 1mm; padding: 0 2mm; }
-    .dept { text-align: center; font-size: 5.8pt; color: #475467; margin-top: .4mm; padding: 0 2mm; }
-    .idno { margin: auto 0 0; background: var(--navy); color: #fff; text-align: center; padding: 1.8mm 0; font-size: 6pt; letter-spacing: .08em; }
-    .idno b { color: var(--gold); font-size: 7.5pt; letter-spacing: .05em; }
+    .name { text-align: center; font-weight: 900; font-size: 9.8pt; line-height: 1.08; padding: 0 2.5mm; margin-top: 2.8mm; text-transform: uppercase; letter-spacing: .01em; }
+    .pos { margin-top: 1.2mm; font-size: 5.6pt; font-weight: 800; color: #fff; background: var(--green); padding: .7mm 2.6mm; border-radius: 5mm; letter-spacing: .08em; text-transform: uppercase; max-width: 46mm; text-align: center; }
+    .dept { text-align: center; font-size: 5.4pt; color: #475467; font-weight: 600; margin-top: .9mm; padding: 0 3mm; }
+    .foot { position: relative; height: 13.5mm; flex: none; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 1.8mm; }
+    .foot .lbl { font-size: 4.6pt; letter-spacing: .3em; font-weight: 700; opacity: .85; position: relative; }
+    .foot .no { font-size: 9pt; font-weight: 900; color: var(--gold); letter-spacing: .08em; position: relative; line-height: 1.1; }
 
-    /* back */
-    .bhead { background: var(--navy); color: #fff; text-align: center; font-size: 5.6pt; font-weight: 800; letter-spacing: .18em; padding: 2mm; }
-    .qr { width: 38mm; height: 38mm; margin: 4mm auto 1mm; }
-    .qr svg { width: 100%; height: 100%; display: block; }
-    .scan { text-align: center; font-size: 5.6pt; font-weight: 700; color: var(--green); letter-spacing: .06em; text-transform: uppercase; }
-    .bid { text-align: center; font-size: 7pt; font-weight: 800; margin-top: 1mm; }
-    .note { font-size: 4.8pt; line-height: 1.4; color: #475467; text-align: center; padding: 2.4mm 3.5mm 0; }
-    .sign { margin: auto 4mm 3.5mm; text-align: center; }
+    /* ---------- back ---------- */
+    .bhead { flex: none; display: flex; align-items: center; gap: 1.8mm; padding: 2mm 2.6mm; color: #fff; background: linear-gradient(165deg, var(--navy), var(--night)); }
+    .bhead .seal { width: 8mm; height: 8mm; box-shadow: 0 0 0 .35mm var(--gold); }
+    .bhead .t1 { font-size: 7pt; font-weight: 900; letter-spacing: .04em; line-height: 1.05; }
+    .bhead .t2 { font-size: 4.6pt; color: var(--gold); letter-spacing: .2em; font-weight: 700; margin-top: .4mm; }
+    .qrwrap { position: relative; width: 37mm; height: 37mm; margin: 3.4mm auto 0; padding: 1.6mm; }
+    .qrwrap::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+      background:
+        linear-gradient(var(--gold), var(--gold)) top left / 5mm .7mm, linear-gradient(var(--gold), var(--gold)) top left / .7mm 5mm,
+        linear-gradient(var(--gold), var(--gold)) top right / 5mm .7mm, linear-gradient(var(--gold), var(--gold)) top right / .7mm 5mm,
+        linear-gradient(var(--gold), var(--gold)) bottom left / 5mm .7mm, linear-gradient(var(--gold), var(--gold)) bottom left / .7mm 5mm,
+        linear-gradient(var(--gold), var(--gold)) bottom right / 5mm .7mm, linear-gradient(var(--gold), var(--gold)) bottom right / .7mm 5mm;
+      background-repeat: no-repeat; }
+    .qrwrap svg { width: 100%; height: 100%; display: block; }
+    .scan { text-align: center; font-size: 5.4pt; font-weight: 800; color: var(--green); letter-spacing: .14em; margin-top: 1.2mm; }
+    .info { margin: 2mm 3.5mm 0; border-top: .2mm solid #e4e7ec; padding-top: 1.6mm; display: grid; grid-template-columns: auto 1fr; gap: .5mm 2mm; font-size: 5.4pt; }
+    .info dt { color: #667085; font-weight: 600; } .info dd { margin: 0; font-weight: 800; text-align: right; }
+    .note { font-size: 4.4pt; line-height: 1.45; color: #475467; text-align: center; padding: 1.8mm 3.5mm 0; }
+    .sign { margin: auto 5mm 0; text-align: center; position: relative; }
     .sign .line { border-top: .25mm solid var(--navy); margin-bottom: .7mm; }
-    .sign .who { font-size: 6pt; font-weight: 800; }
-    .sign .title { font-size: 5pt; color: #475467; }
+    .sign .who { font-size: 5.8pt; font-weight: 900; }
+    .sign .title { font-size: 4.8pt; color: #475467; font-weight: 600; }
+    .bfoot { position: relative; height: 7mm; flex: none; }
 
     .msg { padding: 40px; text-align: center; color: #475467; }
     @page { margin: 8mm; }
     @media print {
       body { background: #fff; }
       .bar { display: none; }
-      .sheet { padding: 0; gap: 4mm; justify-content: flex-start; }
-      .photo { border-style: solid; }
+      .sheet { padding: 0; gap: 5mm; justify-content: flex-start; }
+      .card { box-shadow: none; }
       .photo.empty span { visibility: hidden; }
     }
   </style>
