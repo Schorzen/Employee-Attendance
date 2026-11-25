@@ -1,4 +1,4 @@
-import { sb, getRole, keyMissing, fmtTime, fmtDate } from './supabase.js';
+import { sb, getRole, keyMissing, fmtTime, fmtDate, esc } from './supabase.js';
 import { SETTINGS } from './config.js';
 import { loadModels, startCamera, detectFaces, buildMatcher, LivenessDetector } from './face.js';
 
@@ -12,13 +12,45 @@ const live = new LivenessDetector();
 let frameNo = 0, lastMatch = null;
 const recentlyPunched = new Map(); // employeeId -> timestamp
 
-// ---------- clock ----------
+// ---------- clock + greeting ----------
 function tick() {
   const now = new Date();
-  $('clock').textContent = now.toLocaleTimeString('en-PH', { timeZone: SETTINGS.timezone, hour: 'numeric', minute: '2-digit', second: '2-digit' });
+  const parts = new Intl.DateTimeFormat('en-PH', { timeZone: SETTINGS.timezone, hour: 'numeric', minute: '2-digit', hour12: true }).formatToParts(now);
+  const hm = parts.filter((p) => ['hour', 'literal', 'minute'].includes(p.type)).map((p) => p.value).join('').trim();
+  const ap = parts.find((p) => p.type === 'dayPeriod')?.value.toUpperCase() || '';
+  $('clock').innerHTML = `${hm} <span>${ap}</span>`;
   $('date').textContent = fmtDate(now);
+  const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: SETTINGS.timezone, hour: 'numeric', hour12: false }).format(now)) % 24;
+  const g = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  $('greet').textContent = `${g}! Scan your ID to time in or out.`;
 }
 setInterval(tick, 1000); tick();
+
+// ---------- employee photos (for the result card and "Just now") ----------
+const photoCache = new Map();
+async function getPhoto(employeeNo) {
+  if (!employeeNo) return null;
+  if (photoCache.has(employeeNo)) return photoCache.get(employeeNo);
+  const { data } = await sb.from('employees').select('photo').eq('employee_no', employeeNo).maybeSingle();
+  photoCache.set(employeeNo, data?.photo || null);
+  return data?.photo || null;
+}
+
+// ---------- "Just now" strip (scans made on this kiosk) ----------
+const recentScans = [];
+function initials(name) { return (name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase(); }
+function renderRecent() {
+  $('recent').innerHTML = recentScans.length ? recentScans.map((r) => `
+    <div class="recent-item">
+      ${r.photo ? `<img src="${r.photo}" alt="">` : `<div class="ini">${esc(initials(r.name))}</div>`}
+      <div class="ri-text"><b>${esc(r.name)}</b><span class="${r.type}">${r.type === 'in' ? 'TIME IN' : 'TIME OUT'} · ${esc(r.time)}</span></div>
+    </div>`).join('') : '<div class="recent-empty">No scans yet today on this kiosk</div>';
+}
+async function addRecent(r) {
+  r.photo = await getPhoto(r.employee_no);
+  recentScans.unshift(r); recentScans.length = Math.min(recentScans.length, 4);
+  renderRecent();
+}
 
 function setStatus(text, cls = '') {
   statusEl.textContent = text;
@@ -76,7 +108,8 @@ async function startKiosk() {
       if (r.status === 'unknown') return showResult('dup', 'NOT VALID', 'ID not recognized', '—', 'This card is inactive or was replaced. Please see the admin.');
       if (r.status === 'duplicate') return showResult('dup', 'ALREADY RECORDED', r.full_name, fmtTime(r.punched_at), `Time ${r.punch_type} was just recorded.`);
       const isIn = r.punch_type === 'in';
-      showResult(isIn ? 'in' : 'out', isIn ? 'TIME IN' : 'TIME OUT', r.full_name, fmtTime(r.punched_at), isIn ? 'Have a great day!' : 'Ingat! See you tomorrow.');
+      showResult(isIn ? 'in' : 'out', isIn ? 'TIME IN' : 'TIME OUT', r.full_name, fmtTime(r.punched_at), isIn ? 'Have a great day!' : 'Ingat! See you tomorrow.', r.employee_no);
+      addRecent({ name: r.full_name, type: r.punch_type, time: fmtTime(r.punched_at), employee_no: r.employee_no });
     } });
   }
   try {
@@ -162,17 +195,23 @@ async function punch(emp, distance) {
     showResult('dup', 'ALREADY RECORDED', data.full_name, fmtTime(data.punched_at), `Time ${data.punch_type} was just recorded.`);
   } else {
     const isIn = data.punch_type === 'in';
-    showResult(isIn ? 'in' : 'out', isIn ? 'TIME IN' : 'TIME OUT', data.full_name, fmtTime(data.punched_at), isIn ? 'Have a great day!' : 'Ingat! See you tomorrow.');
+    showResult(isIn ? 'in' : 'out', isIn ? 'TIME IN' : 'TIME OUT', data.full_name, fmtTime(data.punched_at), isIn ? 'Have a great day!' : 'Ingat! See you tomorrow.', data.employee_no);
+    addRecent({ name: data.full_name, type: data.punch_type, time: fmtTime(data.punched_at), employee_no: data.employee_no });
   }
   recentlyPunched.set(emp.id, Date.now());
 }
 
-function showResult(cls, tag, name, time, msg) {
+let resultTimer = null;
+async function showResult(cls, tag, name, time, msg, employeeNo) {
   showingResult = true;
   $('rTag').className = 'tag ' + cls; $('rTag').textContent = tag;
-  $('rName').textContent = name;
+  $('rName').textContent = name; $('rTime').textContent = time; $('rMsg').textContent = msg;
+  $('rPhoto').classList.add('hidden'); $('rPhotoBox').classList.toggle('hidden', !employeeNo);
   $('result').classList.remove('hidden');
-  setTimeout(() => { $('result').classList.add('hidden'); showingResult = false; setStatus('Look at the camera'); }, 3500);
+  clearTimeout(resultTimer);
+  resultTimer = setTimeout(() => { $('result').classList.add('hidden'); showingResult = false; setStatus(SETTINGS.kioskMode === 'qr' ? 'Hold the QR code inside the green corners' : 'Look at the camera'); }, 3500);
+  const photo = await getPhoto(employeeNo);
+  if (photo && showingResult) { $('rPhoto').src = photo; $('rPhoto').classList.remove('hidden'); }
 }
 
 boot();

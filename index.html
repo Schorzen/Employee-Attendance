@@ -4,52 +4,73 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Attendance Kiosk — Barangay Talisay</title>
-  <link rel="stylesheet" href="css/style.css?v=8" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=20" />
 </head>
 <body class="kiosk">
   <div id="keyBanner" class="banner hidden">Supabase key not set. Open <b>js/config.js</b> and paste your publishable key.</div>
 
   <!-- Kiosk login (done once per device; the session is remembered) -->
-  <section id="loginView" class="login hidden" style="color:var(--ink)">
+  <section id="loginView" class="login hidden">
+    <img src="img/barangay-talisay-seal.png" alt="" class="login-seal" />
     <h1>Attendance Kiosk</h1>
     <p>Sign in with the kiosk account to start this device.</p>
     <form id="loginForm">
-      <label>Email</label><input id="email" type="email" required autocomplete="username" />
-      <label>Password</label><input id="password" type="password" required autocomplete="current-password" />
+      <label for="email">Email</label><input id="email" type="email" required autocomplete="username" />
+      <label for="password">Password</label><input id="password" type="password" required autocomplete="current-password" />
       <button class="btn primary" type="submit">Start kiosk</button>
       <div id="loginError" class="error"></div>
     </form>
   </section>
 
   <section id="kioskView" class="kiosk-wrap hidden">
-    <header class="kiosk-head">
-      <div class="clock" id="clock">--:--</div>
-      <div class="date" id="date"></div>
+    <div class="k-sun" aria-hidden="true"></div>
+    <svg class="k-waves" viewBox="0 0 1280 190" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 70 C 220 20, 420 120, 660 70 S 1100 20, 1280 60 V190 H0Z" fill="#9CC9EA"/>
+      <path d="M0 110 C 260 70, 480 160, 740 110 S 1120 70, 1280 100 V190 H0Z" fill="#1F6FB2"/>
+      <path d="M0 150 C 300 120, 560 190, 840 150 S 1160 130, 1280 145 V190 H0Z" fill="#1F3A5F"/>
+    </svg>
+
+    <header class="k-head">
+      <img src="img/barangay-talisay-seal.png" alt="Barangay Talisay seal" class="k-seal" />
+      <img src="img/santa-fe-seal.png" alt="Santa Fe seal" class="k-seal" />
+      <div class="k-org"><b>BARANGAY TALISAY</b><span>Santa Fe, Cebu · Attendance</span></div>
+      <div class="k-time"><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
     </header>
 
-    <div class="kiosk-mid">
-      <div class="cam" id="cam">
-        <video id="video" muted playsinline></video>
-        <canvas id="overlay"></canvas>
+    <main class="kiosk-mid">
+      <div class="cam-card">
+        <div class="cam" id="cam">
+          <video id="video" muted playsinline></video>
+          <canvas id="overlay"></canvas>
+        </div>
       </div>
+      <div class="greet" id="greet">Good morning! Scan your ID to time in.</div>
       <div class="status" id="status">Starting camera…</div>
-    </div>
+    </main>
+
+    <section class="recent" aria-live="polite">
+      <div class="recent-label">JUST NOW</div>
+      <div class="recent-list" id="recent"><div class="recent-empty">No scans yet today on this kiosk</div></div>
+    </section>
 
     <footer class="kiosk-foot">
       <span id="info"></span>
-      <span><a href="admin.html" style="color:#64748b">Admin</a> · <button id="logoutBtn">Sign out kiosk</button></span>
+      <span><a href="admin.html">Admin</a> · <button id="logoutBtn">Sign out kiosk</button></span>
     </footer>
   </section>
 
   <div id="result" class="result hidden">
     <div class="card">
+      <div class="r-photo" id="rPhotoBox"><img id="rPhoto" alt="" class="hidden" /></div>
       <span class="tag" id="rTag">TIME IN</span>
       <div class="name" id="rName"></div>
       <div class="time" id="rTime"></div>
-      <div id="rMsg" style="color:var(--muted);margin-top:.5rem"></div>
+      <div class="r-msg" id="rMsg"></div>
     </div>
   </div>
 
-  <script type="module" src="js/kiosk.js?v=8"></script>
+  <script type="module" src="js/kiosk.js?v=20"></script>
 </body>
 </html>

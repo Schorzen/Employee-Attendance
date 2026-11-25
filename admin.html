@@ -3,45 +3,65 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Attendance Admin</title>
-  <link rel="stylesheet" href="css/style.css?v=8" />
+  <title>Attendance Admin — Barangay Talisay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=20" />
 </head>
 <body>
   <div id="keyBanner" class="banner hidden">Supabase key not set. Open <b>js/config.js</b> and paste your publishable key.</div>
 
   <section id="loginView" class="login hidden">
+    <img src="img/barangay-talisay-seal.png" alt="" class="login-seal" />
     <h1>Admin sign in</h1>
-    <p>Employee Attendance</p>
+    <p>Barangay Talisay · Attendance</p>
     <form id="loginForm">
-      <label>Email</label><input id="email" type="email" required autocomplete="username" />
-      <label>Password</label><input id="password" type="password" required autocomplete="current-password" />
+      <label for="email">Email</label><input id="email" type="email" required autocomplete="username" />
+      <label for="password">Password</label><input id="password" type="password" required autocomplete="current-password" />
       <button class="btn primary" type="submit">Sign in</button>
       <div id="loginError" class="error"></div>
     </form>
   </section>
 
   <div id="app" class="hidden">
-    <div class="topbar">
-      <div class="title" id="appTitle">Attendance Admin</div>
+    <header class="topbar">
+      <div class="brand"><img src="img/barangay-talisay-seal.png" alt="Barangay Talisay seal" /><span id="appTitle">Barangay Talisay</span></div>
       <nav class="tabs">
         <button data-tab="today" class="active">Today</button>
         <button data-tab="records">Records</button>
         <button data-tab="employees">Employees</button>
       </nav>
-      <a class="btn sm" href="index.html">Open kiosk</a>
-      <button class="btn sm" id="logoutBtn">Sign out</button>
-    </div>
+      <div class="top-actions">
+        <button class="btn primary" id="addEmpTop">+ Add employee</button>
+        <a class="btn" href="index.html">Kiosk</a>
+        <button class="btn" id="logoutBtn">Sign out</button>
+      </div>
+    </header>
 
     <main>
       <!-- TODAY -->
-      <section id="tab-today">
-        <div class="toolbar">
-          <h2 style="margin:0" id="todayTitle">Today</h2>
-          <div class="spacer"></div>
-          <button class="btn" id="refreshToday">Refresh</button>
+      <section id="tab-today" class="today">
+        <div class="today-main">
+          <div class="today-head">
+            <div>
+              <h1 class="page-title" id="todayTitle">Good morning</h1>
+              <p class="page-sub" id="todaySummary"></p>
+            </div>
+            <div class="filters" id="todayFilters">
+              <button data-f="all" class="active">All</button>
+              <button data-f="in">In</button>
+              <button data-f="out">Out</button>
+              <button data-f="none">Not yet in</button>
+            </div>
+          </div>
+          <div class="tiles" id="todayTiles"></div>
         </div>
-        <div class="stats" id="todayStats"></div>
-        <div class="table-wrap"><table id="todayTable"></table></div>
+        <aside class="feed">
+          <div class="feed-label">LIVE</div>
+          <h3>Today's scans</h3>
+          <div id="todayFeed"></div>
+          <button class="btn sm" id="refreshToday" style="margin-top:.75rem">Refresh</button>
+        </aside>
       </section>
 
       <!-- RECORDS -->
@@ -140,6 +160,6 @@
     </form>
   </dialog>
 
-  <script type="module" src="js/admin.js?v=10"></script>
+  <script type="module" src="js/admin.js?v=20"></script>
 </body>
 </html>
