@@ -5,7 +5,7 @@
 //  NEVER put the "service_role" / secret key in this file.
 // ======================================================================
 export const SUPABASE_URL = 'https://acswffglpevchssuwjhw.supabase.co';
-export const SUPABASE_ANON_KEY = 'PASTE_YOUR_PUBLISHABLE_KEY_HERE';
+export const SUPABASE_ANON_KEY = 'sb_publishable_Ou2IF7ldaoRYAwD1gGH7Rg_KNuQ-Bok';
 
 export const SETTINGS = {
   companyName: 'Employee Attendance',
