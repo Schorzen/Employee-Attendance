@@ -68,6 +68,7 @@ async function loadEmployees() {
 async function startKiosk() {
   $('kioskView').classList.remove('hidden');
   if (SETTINGS.kioskMode === 'qr') {
+    document.body.classList.add('qr-mode');
     const { startQrKiosk } = await import('./kiosk-qr.js');
     $('info').textContent = 'ID card scanner';
     return startQrKiosk({ video, setStatus, isBusy: () => showingResult, showResult: (r, ...rest) => {

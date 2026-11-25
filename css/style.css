@@ -85,3 +85,17 @@ dialog .foot { display: flex; justify-content: flex-end; gap: .5rem; margin-top:
 .progress div { height: 100%; width: 0; background: var(--brand); transition: width .3s; }
 .hint { color: var(--muted); font-size: .9rem; margin-top: .5rem; }
 .toast { position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: .7rem 1.2rem; border-radius: 10px; z-index: 50; }
+
+/* ---------- QR (ID card) kiosk: wide box camera with a scan guide ---------- */
+.qr-mode .cam { border-radius: 20px; aspect-ratio: 4 / 3; width: min(92vw, 680px); }
+.qr-mode .cam::after {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 52%; aspect-ratio: 1; transform: translate(-50%, -50%);
+  border-radius: 14px; box-shadow: 0 0 0 9999px rgba(11, 18, 32, .45); pointer-events: none;
+  background:
+    linear-gradient(#F5C451, #F5C451) top left / 34px 5px, linear-gradient(#F5C451, #F5C451) top left / 5px 34px,
+    linear-gradient(#F5C451, #F5C451) top right / 34px 5px, linear-gradient(#F5C451, #F5C451) top right / 5px 34px,
+    linear-gradient(#F5C451, #F5C451) bottom left / 34px 5px, linear-gradient(#F5C451, #F5C451) bottom left / 5px 34px,
+    linear-gradient(#F5C451, #F5C451) bottom right / 34px 5px, linear-gradient(#F5C451, #F5C451) bottom right / 5px 34px;
+  background-repeat: no-repeat;
+}
+.qr-mode .cam.ok::after { box-shadow: 0 0 0 9999px rgba(22, 163, 74, .25); }
