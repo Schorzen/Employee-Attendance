@@ -67,6 +67,7 @@
     .info dt { color: #667085; font-weight: 600; } .info dd { margin: 0; font-weight: 800; text-align: right; }
     .note { font-size: 4.4pt; line-height: 1.45; color: #475467; text-align: center; padding: 1.8mm 3.5mm 0; }
     .sign { margin: auto 5mm .5mm; text-align: center; position: relative; }
+    .sign .sig { position: absolute; left: 50%; bottom: 3.2mm; height: 11mm; transform: translateX(-50%); pointer-events: none; }
     .sign .line { border-top: .25mm solid var(--navy); margin-bottom: .7mm; }
     .sign .who { font-size: 5.8pt; font-weight: 900; }
     .sign .title { font-size: 4.8pt; color: #475467; font-weight: 600; }
@@ -88,7 +89,7 @@
     <b id="count">ID Cards</b>
     <button onclick="window.print()">Print</button>
     <small>Each employee has a <b>front</b> (left) and <b>back</b> (right). Print at <b>100% / Actual size</b>, cut along the dashed lines, put front and back together, then laminate.
-      Click a photo box to add a 1×1 photo for printing (the photo is not saved), or leave it blank and paste a photo after printing.</small>
+      Photos come from each employee's record (Employees → Edit → Take photo). If someone has no photo yet, you can click their photo box to add one just for this print.</small>
   </div>
   <div class="sheet" id="sheet"><div class="msg">Loading…</div></div>
   <script type="module" src="js/idcards.js"></script>

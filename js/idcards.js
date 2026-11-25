@@ -20,7 +20,7 @@ async function main() {
     return;
   }
   const ids = new URLSearchParams(location.search).get('ids');
-  let q = sb.from('employees').select('id, employee_no, full_name, department, position, qr_token, active').order('full_name');
+  let q = sb.from('employees').select('id, employee_no, full_name, department, position, qr_token, active, photo').order('full_name');
   q = ids ? q.in('id', ids.split(',')) : q.eq('active', true);
   const { data, error } = await q;
   if (error) { sheet.innerHTML = `<div class="msg">${esc(error.message)}</div>`; return; }
@@ -43,7 +43,7 @@ async function main() {
         <div class="stripe"></div>
         <div class="body">
           <img class="wm" src="${SEAL_BRGY}" alt="" onerror="this.remove()">
-          <label class="photo empty"><span>1×1 PHOTO</span><input type="file" accept="image/*" hidden></label>
+          ${e.photo ? `<div class="photo"><img src="${e.photo}" alt=""></div>` : '<label class="photo empty"><span>1×1 PHOTO</span><input type="file" accept="image/*" hidden></label>'}
           <div class="name">${esc(e.full_name)}</div>
           ${e.position ? `<div class="pos">${esc(e.position)}</div>` : ''}
           ${e.department ? `<div class="dept">${esc(e.department)}</div>` : ''}
@@ -61,7 +61,7 @@ async function main() {
         <dl class="info"><dt>Name</dt><dd>${esc(e.full_name)}</dd><dt>Employee No.</dt><dd>${esc(e.employee_no)}</dd></dl>
         <div class="note">This card is the property of ${esc(o.address.split(',')[0])} and is non-transferable.
           If found, please return to the Barangay Hall, ${esc(o.address)}.</div>
-        <div class="sign"><div class="line"></div><div class="who">${esc(o.signatory)}</div><div class="title">${esc(o.signatoryTitle)}</div></div>
+        <div class="sign"><img class="sig" src="img/signature.png" alt="" onerror="this.remove()"><div class="line"></div><div class="who">${esc(o.signatory)}</div><div class="title">${esc(o.signatoryTitle)}</div></div>
         <div class="bfoot">${WAVE(28, '#1F6FB2')}</div>
       </div>
     </div>`;

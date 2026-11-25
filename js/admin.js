@@ -61,7 +61,7 @@ document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('cli
 // ---------------- data ----------------
 async function loadEmployees() {
   employees = await fetchAll(() => sb.from('employees')
-    .select('id, employee_no, full_name, department, position, active, consent_at, face_descriptors')
+    .select('id, employee_no, full_name, department, position, active, consent_at, face_descriptors, has_photo')
     .order('full_name'));
   const opts = employees.map((e) => `<option value="${e.id}">${esc(e.full_name)} (${esc(e.employee_no)})</option>`).join('');
   $('fEmp').innerHTML = '<option value="">All employees</option>' + opts;
@@ -217,8 +217,8 @@ const faceMode = SETTINGS.kioskMode === 'face';
 function renderEmployees() {
   const q = $('empSearch').value.toLowerCase();
   const list = employees.filter((e) => !q || [e.full_name, e.employee_no, e.department, e.position].join(' ').toLowerCase().includes(q));
-  $('empTable').innerHTML = `<thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Position</th>${faceMode ? '<th>Face</th>' : ''}<th>Status</th><th></th></tr></thead><tbody>${
-    list.map((e) => { const n = e.face_descriptors?.length || 0; return `<tr><td>${esc(e.employee_no)}</td><td>${esc(e.full_name)}</td><td>${esc(e.department)}</td><td>${esc(e.position)}</td>
+  $('empTable').innerHTML = `<thead><tr><th>Photo</th><th>ID</th><th>Name</th><th>Department</th><th>Position</th>${faceMode ? '<th>Face</th>' : ''}<th>Status</th><th></th></tr></thead><tbody>${
+    list.map((e) => { const n = e.face_descriptors?.length || 0; return `<tr><td>${e.has_photo ? '<span class="pill in">✓</span>' : '<span class="pill warn">None</span>'}</td><td>${esc(e.employee_no)}</td><td>${esc(e.full_name)}</td><td>${esc(e.department)}</td><td>${esc(e.position)}</td>
       ${faceMode ? `<td>${n ? '<span class="pill in">Enrolled</span>' : '<span class="pill warn">Not enrolled</span>'}</td>` : ''}
       <td>${e.active ? 'Active' : '<span class="pill none">Inactive</span>'}</td>
       <td class="actions"><button class="btn sm" data-edit="${e.id}">Edit</button>
@@ -252,25 +252,79 @@ $('empTable').addEventListener('click', async (ev) => {
 
 $('addEmp').addEventListener('click', () => openEmpForm(null));
 
-function openEmpForm(e) {
+async function openEmpForm(e) {
   $('empDialogTitle').textContent = e ? 'Edit employee' : 'Add employee';
   $('empId').value = e?.id || ''; $('empNo').value = e?.employee_no || ''; $('empName').value = e?.full_name || '';
   $('empDept').value = e?.department || ''; $('empPos').value = e?.position || '';
   $('empActive').checked = e ? e.active : true; $('empError').textContent = '';
+  stopEmpCam(); setPhoto(null);
   $('empDialog').showModal();
+  if (e?.has_photo) {
+    const { data } = await sb.from('employees').select('photo').eq('id', e.id).single();
+    setPhoto(data?.photo || null);
+  }
 }
+
+// ---------- ID photo (camera / upload) ----------
+let photoData = null, camStream = null;
+function setPhoto(data) {
+  photoData = data;
+  $('empPhotoImg').classList.toggle('hidden', !data);
+  $('empPhotoNone').classList.toggle('hidden', !!data);
+  if (data) $('empPhotoImg').src = data; else $('empPhotoImg').removeAttribute('src');
+}
+function stopEmpCam() {
+  camStream?.getTracks().forEach((t) => t.stop()); camStream = null;
+  $('empCam').classList.add('hidden'); $('snapBtn').classList.add('hidden'); $('camBtn').classList.remove('hidden');
+}
+// center-crop to a square and shrink to a small JPEG
+function toSquareJpeg(source, w, h, mirror = false) {
+  const side = Math.min(w, h), size = 360;
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  if (mirror) { ctx.translate(size, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(source, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size);
+  return c.toDataURL('image/jpeg', 0.85);
+}
+$('camBtn').addEventListener('click', async () => {
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+  } catch (err) { return alert('Camera not available: ' + err.message); }
+  const v = $('empCam'); v.srcObject = camStream; await v.play();
+  $('empPhotoImg').classList.add('hidden'); $('empPhotoNone').classList.add('hidden');
+  v.classList.remove('hidden'); $('snapBtn').classList.remove('hidden'); $('camBtn').classList.add('hidden');
+});
+$('snapBtn').addEventListener('click', () => {
+  const v = $('empCam');
+  setPhoto(toSquareJpeg(v, v.videoWidth, v.videoHeight, true));
+  stopEmpCam();
+});
+$('photoFile').addEventListener('change', (ev) => {
+  const f = ev.target.files[0]; if (!f) return;
+  const img = new Image();
+  img.onload = () => { setPhoto(toSquareJpeg(img, img.naturalWidth, img.naturalHeight)); URL.revokeObjectURL(img.src); };
+  img.src = URL.createObjectURL(f);
+  ev.target.value = '';
+});
+$('photoDel').addEventListener('click', () => { stopEmpCam(); setPhoto(null); });
+$('empDialog').addEventListener('close', stopEmpCam);
 
 $('empForm').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   const row = {
     employee_no: $('empNo').value.trim(), full_name: $('empName').value.trim(),
     department: $('empDept').value.trim() || null, position: $('empPos').value.trim() || null, active: $('empActive').checked,
+    photo: photoData,
   };
   const id = $('empId').value;
   const { error } = id ? await sb.from('employees').update(row).eq('id', id) : await sb.from('employees').insert(row);
   if (error) return ($('empError').textContent = error.code === '23505' ? 'That Employee ID already exists.' : error.message);
   $('empDialog').close();
   await loadEmployees(); renderEmployees(); toast('Employee saved');
+  if (!id && confirm('Employee saved. Open their ID card for printing now?')) {
+    const added = employees.find((x) => x.employee_no === row.employee_no);
+    if (added) window.open(`idcards.html?ids=${added.id}`, '_blank');
+  }
 });
 
 // ---------------- face enrollment ----------------
