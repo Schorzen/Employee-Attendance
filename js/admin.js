@@ -225,7 +225,8 @@ function renderEmployees() {
         <a class="btn sm" href="idcards.html?ids=${e.id}" target="_blank">ID card</a>
         <button class="btn sm" data-reissue="${e.id}">Replace ID</button>
         ${faceMode ? `<button class="btn sm" data-enroll="${e.id}">${n ? 'Re-enroll' : 'Enroll face'}</button>` : ''}
-        ${n ? `<button class="btn sm danger" data-clear="${e.id}">Remove face</button>` : ''}</td></tr>`; }).join('')
+        ${n ? `<button class="btn sm danger" data-clear="${e.id}">Remove face</button>` : ''}
+        <button class="btn sm danger" data-delete="${e.id}">Delete</button></td></tr>`; }).join('')
     || '<tr><td colspan="7" class="empty">No employees yet.</td></tr>'}</tbody>`;
 }
 
@@ -241,6 +242,15 @@ $('empTable').addEventListener('click', async (ev) => {
     if (error) return alert(error.message);
     toast('Old ID disabled — print the new card');
     window.open(`idcards.html?ids=${e.id}`, '_blank');
+  }
+  if (t.delete) {
+    const e = empById(t.delete);
+    const typed = prompt(`Delete ${e.full_name} permanently?\n\nThis also deletes ALL of their attendance records and their photo. It cannot be undone.\n(If they only resigned and you want to keep their records, click Cancel and use Edit → uncheck "Active" instead.)\n\nType their Employee ID (${e.employee_no}) to confirm:`);
+    if (typed === null) return;
+    if (typed.trim() !== e.employee_no) return alert('Employee ID did not match — nothing was deleted.');
+    const { error } = await sb.from('employees').delete().eq('id', e.id);
+    if (error) return alert(error.message);
+    await loadEmployees(); renderEmployees(); toast(`${e.full_name} deleted`);
   }
   if (t.clear) {
     if (!confirm('Delete this employee\'s face data? They will need to be enrolled again to use the kiosk.')) return;
