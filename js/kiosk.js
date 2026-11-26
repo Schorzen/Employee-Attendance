@@ -1,4 +1,4 @@
-import { sb, getRole, keyMissing, fmtTime, fmtDate, esc } from './supabase.js';
+import { sb, getRole, keyMissing, fmtTime, fmtDate } from './supabase.js';
 import { SETTINGS } from './config.js';
 import { loadModels, startCamera, detectFaces, buildMatcher, LivenessDetector } from './face.js';
 
@@ -20,9 +20,6 @@ function tick() {
   const ap = parts.find((p) => p.type === 'dayPeriod')?.value.toUpperCase() || '';
   $('clock').innerHTML = `${hm} <span>${ap}</span>`;
   $('date').textContent = fmtDate(now);
-  const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: SETTINGS.timezone, hour: 'numeric', hour12: false }).format(now)) % 24;
-  const g = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-  $('greet').textContent = `${g}! Scan your ID to time in or out.`;
 }
 setInterval(tick, 1000); tick();
 
@@ -36,21 +33,32 @@ async function getPhoto(employeeNo) {
   return data?.photo || null;
 }
 
-// ---------- "Just now" strip (scans made on this kiosk) ----------
-const recentScans = [];
-function initials(name) { return (name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase(); }
-function renderRecent() {
-  $('recent').innerHTML = recentScans.length ? recentScans.map((r) => `
-    <div class="recent-item">
-      ${r.photo ? `<img src="${r.photo}" alt="">` : `<div class="ini">${esc(initials(r.name))}</div>`}
-      <div class="ri-text"><b>${esc(r.name)}</b><span class="${r.type}">${r.type === 'in' ? 'TIME IN' : 'TIME OUT'} · ${esc(r.time)}</span></div>
-    </div>`).join('') : '<div class="recent-empty">No scans yet today on this kiosk</div>';
+// ---------- "Present today" counter (counts only) ----------
+async function refreshStats() {
+  const { data, error } = await sb.rpc('kiosk_today_stats');
+  if (error || !data) return;
+  $('presentN').textContent = data.present; $('totalN').textContent = data.total;
+  $('presentBar').style.width = data.total ? Math.round((data.present / data.total) * 100) + '%' : '0';
 }
-async function addRecent(r) {
-  r.photo = await getPhoto(r.employee_no);
-  recentScans.unshift(r); recentScans.length = Math.min(recentScans.length, 4);
-  renderRecent();
+
+// ---------- beep ----------
+let audioCtx = null;
+function beep(ok = true) {
+  try {
+    audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+    const tones = ok ? [[880, 0], [1320, 0.12]] : [[220, 0], [180, 0.18]];
+    tones.forEach(([f, t]) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = ok ? 'sine' : 'square'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, audioCtx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.25, audioCtx.currentTime + t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + t + 0.16);
+      o.connect(g).connect(audioCtx.destination); o.start(audioCtx.currentTime + t); o.stop(audioCtx.currentTime + t + 0.18);
+    });
+  } catch (e) { /* sound not available */ }
 }
+// browsers only allow sound after the page is touched once
+window.addEventListener('pointerdown', () => { audioCtx ??= new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume?.(); }, { once: true });
 
 function setStatus(text, cls = '') {
   statusEl.textContent = text;
@@ -99,6 +107,7 @@ async function loadEmployees() {
 
 async function startKiosk() {
   $('kioskView').classList.remove('hidden');
+  refreshStats(); setInterval(refreshStats, 60000);
   if (SETTINGS.kioskMode === 'qr') {
     document.body.classList.add('qr-mode');
     const { startQrKiosk } = await import('./kiosk-qr.js');
@@ -109,9 +118,10 @@ async function startKiosk() {
       if (r.status === 'duplicate') return showResult('dup', 'ALREADY RECORDED', r.full_name, fmtTime(r.punched_at), `Time ${r.punch_type} was just recorded.`);
       const isIn = r.punch_type === 'in';
       showResult(isIn ? 'in' : 'out', isIn ? 'TIME IN' : 'TIME OUT', r.full_name, fmtTime(r.punched_at), isIn ? 'Have a great day!' : 'Ingat! See you tomorrow.', r.employee_no);
-      addRecent({ name: r.full_name, type: r.punch_type, time: fmtTime(r.punched_at), employee_no: r.employee_no });
+      refreshStats();
     } });
   }
+  $('greet').textContent = 'Look at the camera';
   try {
     setStatus('Loading face models…');
     await Promise.all([loadModels(), loadEmployees()]);
@@ -196,7 +206,7 @@ async function punch(emp, distance) {
   } else {
     const isIn = data.punch_type === 'in';
     showResult(isIn ? 'in' : 'out', isIn ? 'TIME IN' : 'TIME OUT', data.full_name, fmtTime(data.punched_at), isIn ? 'Have a great day!' : 'Ingat! See you tomorrow.', data.employee_no);
-    addRecent({ name: data.full_name, type: data.punch_type, time: fmtTime(data.punched_at), employee_no: data.employee_no });
+    refreshStats();
   }
   recentlyPunched.set(emp.id, Date.now());
 }
@@ -206,6 +216,7 @@ async function showResult(cls, tag, name, time, msg, employeeNo) {
   showingResult = true;
   $('rTag').className = 'tag ' + cls; $('rTag').textContent = tag;
   $('rName').textContent = name; $('rTime').textContent = time; $('rMsg').textContent = msg;
+  beep(cls === 'in' || cls === 'out');
   $('rPhoto').classList.add('hidden'); $('rPhotoBox').classList.toggle('hidden', !employeeNo);
   $('result').classList.remove('hidden');
   clearTimeout(resultTimer);

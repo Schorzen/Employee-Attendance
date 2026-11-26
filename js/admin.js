@@ -42,6 +42,7 @@ $('logoutBtn').addEventListener('click', async () => { await sb.auth.signOut(); 
 
 async function startApp() {
   $('app').classList.remove('hidden');
+  sb.auth.getUser().then(({ data }) => { if (data?.user?.email) $('userEmail').textContent = data.user.email; });
   $('fFrom').value = $('fTo').value = todayISO();
   await loadEmployees();
   renderToday();
@@ -122,53 +123,49 @@ const avatar = (e, cls = 'thumb') => photos.get(e.id)
   : `<div class="${cls === 'thumb' ? 'thumb-ini' : 'ini'}">${esc(initials(e.full_name))}</div>`;
 
 // ---------------- today ----------------
-let todayFilter = 'all', todayTimer = null;
-$('refreshToday').addEventListener('click', renderToday);
+let todayFilter = 'all', todayTimer = null, todayCache = null;
+$('refreshToday').addEventListener('click', () => renderToday());
 $('todayFilters').addEventListener('click', (ev) => {
-  const f = ev.target.dataset.f; if (!f) return;
-  todayFilter = f;
-  document.querySelectorAll('#todayFilters button').forEach((b) => b.classList.toggle('active', b.dataset.f === f));
+  const btn = ev.target.closest('[data-f]'); if (!btn) return;
+  todayFilter = btn.dataset.f;
+  document.querySelectorAll('#todayFilters .kpi').forEach((k) => k.classList.toggle('active', k === btn));
   renderToday(false);
 });
+$('todaySearch').addEventListener('input', () => renderToday(false));
 $('addEmpTop').addEventListener('click', () => openEmpForm(null));
 
-let todayCache = null;
 async function renderToday(refetch = true) {
   const today = todayISO();
   if (refetch || !todayCache) {
     const [punches] = await Promise.all([fetchPunches(today, today), loadPhotos()]);
     todayCache = punches;
   }
-  const punches = todayCache;
-  const sum = new Map(summarize(punches).map((x) => [x.employee_id, x]));
+  const sum = new Map(summarize(todayCache).map((x) => [x.employee_id, x]));
   const active = employees.filter((e) => e.active);
   const statusOf = (e) => { const x = sum.get(e.id); return !x ? 'none' : x.open ? 'in' : 'out'; };
-  const counts = { all: active.length, in: 0, out: 0, none: 0 };
-  active.forEach((e) => counts[statusOf(e)]++);
+  const n = { all: active.length, in: 0, out: 0, none: 0 };
+  active.forEach((e) => n[statusOf(e)]++);
 
-  const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: SETTINGS.timezone, hour: 'numeric', hour12: false }).format(new Date())) % 24;
-  $('todayTitle').textContent = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-  $('todaySummary').textContent = `${counts.in + counts.out} of ${active.length} employees are present today · ${fmtDate(new Date())}`;
-  const labels = { all: 'All', in: 'In', out: 'Out', none: 'Not yet in' };
-  document.querySelectorAll('#todayFilters button').forEach((b) => (b.textContent = `${labels[b.dataset.f]} (${counts[b.dataset.f]})`));
+  $('todayTitle').textContent = fmtDate(new Date());
+  $('kAll').textContent = n.all; $('kPresent').textContent = n.in + n.out; $('kIn').textContent = n.in; $('kNone').textContent = n.none;
 
-  const list = active.filter((e) => todayFilter === 'all' || statusOf(e) === todayFilter);
-  $('todayTiles').innerHTML = list.map((e) => {
-    const st = statusOf(e), x = sum.get(e.id);
-    const pill = st === 'in' ? `<span class="pill in">In since ${fmtTime(x.first_in)}</span>`
-      : st === 'out' ? `<span class="pill out">Out at ${fmtTime(x.last_out)}</span>`
-      : '<span class="pill warn">Not yet in</span>';
-    return `<div class="tile"><div class="av">${avatar(e, 'av-img')}<span class="dot ${st}"></span></div>
-      <div class="t-info"><div class="t-name">${esc(e.full_name)}</div><div class="t-pos">${esc(e.position || e.department || e.employee_no)}</div>${pill}</div></div>`;
-  }).join('') || `<div class="empty" style="grid-column:1/-1">${active.length ? 'Nobody in this group right now.' : 'No employees yet — click “+ Add employee”.'}</div>`;
+  const q = $('todaySearch').value.trim().toLowerCase();
+  const list = active.filter((e) => {
+    const st = statusOf(e);
+    const okF = todayFilter === 'all' || (todayFilter === 'present' ? st !== 'none' : st === todayFilter);
+    const okQ = !q || [e.full_name, e.employee_no, e.position, e.department].join(' ').toLowerCase().includes(q);
+    return okF && okQ;
+  });
+  const pill = { in: '<span class="pill in">IN</span>', out: '<span class="pill out">OUT</span>', none: '<span class="pill none">NOT YET IN</span>' };
+  $('todayTable').innerHTML = `<thead><tr><th>Employee</th><th>Position</th><th>Time in</th><th>Time out</th><th>Hours</th><th>Status</th></tr></thead><tbody>${
+    list.map((e) => { const x = sum.get(e.id); return `<tr>
+      <td><div class="emp-cell">${avatar(e)}<div><b>${esc(e.full_name)}</b><div class="sub">${esc(e.employee_no)}</div></div></div></td>
+      <td>${esc(e.position || '—')}</td>
+      <td><b>${x?.first_in ? fmtTime(x.first_in) : '—'}</b></td>
+      <td><b>${x?.last_out ? fmtTime(x.last_out) : '—'}</b></td>
+      <td>${hrs(x?.hours)}</td><td>${pill[statusOf(e)]}</td></tr>`; }).join('')
+    || `<tr><td colspan="6" class="empty">${active.length ? 'No employees match.' : 'No employees yet — click “+ Add employee”.'}</td></tr>`}</tbody>`;
 
-  const feed = [...punches].reverse().slice(0, 12);
-  $('todayFeed').innerHTML = feed.map((p) => {
-    const e = empById(p.employee_id);
-    return `<div class="feed-item"><span class="fdot ${p.punch_type}"></span><div><b>${esc(e.full_name || 'Employee')} timed ${p.punch_type}</b><span>${fmtTime(p.punched_at)} · ${p.method === 'qr' ? 'ID scan' : p.method === 'face' ? 'Face scan' : 'Manual entry'}</span></div></div>`;
-  }).join('') || '<div class="hint">No scans yet today.</div>';
-
-  // keep Today fresh while it is open
   clearTimeout(todayTimer);
   if (!$('tab-today').classList.contains('hidden')) todayTimer = setTimeout(() => renderToday(), 30000);
 }
@@ -371,7 +368,7 @@ $('empForm').addEventListener('submit', async (ev) => {
   if (!error) { if (photoData) photos.set(newId, photoData); else photos.delete(newId); }
   if (error) return ($('empError').textContent = error.code === '23505' ? 'That Employee ID already exists.' : error.message);
   $('empDialog').close();
-  await loadEmployees(); renderEmployees(); renderToday(false); toast('Employee saved');
+  await loadEmployees(); renderEmployees(); renderToday(); toast('Employee saved');
   if (!id && confirm(`Employee saved with ID ${saved.employee_no}. Open their ID card for printing now?`)) {
     const added = employees.find((x) => x.id === newId);
     if (added) window.open(`idcards.html?ids=${added.id}`, '_blank');

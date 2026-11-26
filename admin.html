@@ -6,7 +6,7 @@
   <title>Attendance Admin — Barangay Talisay</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20" />
+  <link rel="stylesheet" href="css/style.css?v=30" />
 </head>
 <body>
   <div id="keyBanner" class="banner hidden">Supabase key not set. Open <b>js/config.js</b> and paste your publishable key.</div>
@@ -23,49 +23,50 @@
     </form>
   </section>
 
-  <div id="app" class="hidden">
-    <header class="topbar">
-      <div class="brand"><img src="img/barangay-talisay-seal.png" alt="Barangay Talisay seal" /><span id="appTitle">Barangay Talisay</span></div>
-      <nav class="tabs">
-        <button data-tab="today" class="active">Today</button>
-        <button data-tab="records">Records</button>
-        <button data-tab="employees">Employees</button>
-      </nav>
-      <div class="top-actions">
-        <button class="btn primary" id="addEmpTop">+ Add employee</button>
-        <a class="btn" href="index.html">Kiosk</a>
-        <button class="btn" id="logoutBtn">Sign out</button>
+  <div id="app" class="admin-shell hidden">
+    <nav class="side" aria-label="Main">
+      <div class="side-brand">
+        <img src="img/barangay-talisay-seal.png" alt="Barangay Talisay seal" />
+        <div>BARANGAY<br />TALISAY</div>
       </div>
-    </header>
+      <div class="tabs">
+        <button data-tab="today" class="active"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Today</button>
+        <button data-tab="records"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Records</button>
+        <button data-tab="employees"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0 1 12 0v1M16 4a4 4 0 0 1 0 8M22 21v-1a6 6 0 0 0-4-5.6"/></svg>Employees</button>
+        <a href="idcards.html" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="12" r="2.5"/><path d="M14 10h4M14 14h4"/></svg>ID Cards</a>
+        <a href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M12 17h0"/></svg>Open kiosk</a>
+      </div>
+      <div class="side-user">
+        <span>Signed in as</span>
+        <b id="userEmail">Admin</b>
+        <button class="btn sm" id="logoutBtn">Sign out</button>
+      </div>
+    </nav>
 
     <main>
       <!-- TODAY -->
-      <section id="tab-today" class="today">
-        <div class="today-main">
-          <div class="today-head">
-            <div>
-              <h1 class="page-title" id="todayTitle">Good morning</h1>
-              <p class="page-sub" id="todaySummary"></p>
-            </div>
-            <div class="filters" id="todayFilters">
-              <button data-f="all" class="active">All</button>
-              <button data-f="in">In</button>
-              <button data-f="out">Out</button>
-              <button data-f="none">Not yet in</button>
-            </div>
+      <section id="tab-today">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow">TODAY</div>
+            <h1 class="page-title" id="todayTitle">—</h1>
           </div>
-          <div class="tiles" id="todayTiles"></div>
+          <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="todaySearch" placeholder="Search employee" aria-label="Search employee" /></label>
+          <button class="btn primary" id="addEmpTop">+ Add employee</button>
         </div>
-        <aside class="feed">
-          <div class="feed-label">LIVE</div>
-          <h3>Today's scans</h3>
-          <div id="todayFeed"></div>
-          <button class="btn sm" id="refreshToday" style="margin-top:.75rem">Refresh</button>
-        </aside>
+        <div class="kpis" id="todayFilters">
+          <button class="kpi active" data-f="all"><span class="kpi-l">Active employees</span><span class="kpi-n" id="kAll">–</span></button>
+          <button class="kpi k-in" data-f="present"><span class="kpi-l">Present today</span><span class="kpi-n" id="kPresent">–</span></button>
+          <button class="kpi k-now" data-f="in"><span class="kpi-l">Currently in</span><span class="kpi-n" id="kIn">–</span></button>
+          <button class="kpi k-none" data-f="none"><span class="kpi-l">Not yet in</span><span class="kpi-n" id="kNone">–</span></button>
+        </div>
+        <div class="table-wrap"><table id="todayTable"></table></div>
+        <p class="hint">Updates every 30 seconds. Click a box above to filter the list. <button class="linkbtn" id="refreshToday">Refresh now</button></p>
       </section>
 
       <!-- RECORDS -->
       <section id="tab-records" class="hidden">
+        <div class="page-head"><div><div class="eyebrow">RECORDS</div><h1 class="page-title">Attendance records</h1></div></div>
         <div class="toolbar">
           <div><label>From</label><input type="date" id="fFrom" /></div>
           <div><label>To</label><input type="date" id="fTo" /></div>
@@ -83,6 +84,7 @@
 
       <!-- EMPLOYEES -->
       <section id="tab-employees" class="hidden">
+        <div class="page-head"><div><div class="eyebrow">EMPLOYEES</div><h1 class="page-title">Employees &amp; ID cards</h1></div></div>
         <div class="toolbar">
           <div style="min-width:260px"><label>Search</label><input id="empSearch" placeholder="Name, ID or department" /></div>
           <div class="spacer"></div>
@@ -160,6 +162,6 @@
     </form>
   </dialog>
 
-  <script type="module" src="js/admin.js?v=20"></script>
+  <script type="module" src="js/admin.js?v=30"></script>
 </body>
 </html>
