@@ -6,7 +6,7 @@ let employees = [];
 let currentExport = { name: 'attendance.csv', rows: [] };
 
 document.title = `${SETTINGS.companyName} — Admin`;
-$('appTitle').textContent = SETTINGS.companyName;
+if ($('appTitle')) $('appTitle').textContent = SETTINGS.companyName;
 
 function toast(msg) {
   const t = document.createElement('div');
