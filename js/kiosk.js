@@ -220,7 +220,7 @@ async function showResult(cls, tag, name, time, msg, employeeNo) {
   $('rPhoto').classList.add('hidden'); $('rPhotoBox').classList.toggle('hidden', !employeeNo);
   $('result').classList.remove('hidden');
   clearTimeout(resultTimer);
-  resultTimer = setTimeout(() => { $('result').classList.add('hidden'); showingResult = false; setStatus(SETTINGS.kioskMode === 'qr' ? 'Hold the QR code inside the green corners' : 'Look at the camera'); }, 3500);
+  resultTimer = setTimeout(() => { $('result').classList.add('hidden'); showingResult = false; setStatus(SETTINGS.kioskMode === 'qr' ? 'Hold the QR code inside the gold corners' : 'Look at the camera'); }, 3500);
   const photo = await getPhoto(employeeNo);
   if (photo && showingResult) { $('rPhoto').src = photo; $('rPhoto').classList.remove('hidden'); }
 }

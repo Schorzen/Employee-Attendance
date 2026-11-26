@@ -41,7 +41,7 @@ export async function startQrKiosk({ video, setStatus, showResult, isBusy }) {
   } catch (e) {
     return setStatus('No camera — use a USB scanner, or allow camera access', 'wait');
   }
-  setStatus('Hold the QR code inside the green corners');
+  setStatus('Hold the QR code inside the gold corners');
 
   const scan = () => {
     if (!working && !isBusy() && video.videoWidth) {
@@ -50,7 +50,7 @@ export async function startQrKiosk({ video, setStatus, showResult, isBusy }) {
       ctx.drawImage(video, 0, 0, w, h);
       const code = jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
       if (code?.data) handle(code.data);
-      else if (!working) setStatus('Hold the QR code inside the green corners');
+      else if (!working) setStatus('Hold the QR code inside the gold corners');
     }
     setTimeout(scan, 120);
   };
